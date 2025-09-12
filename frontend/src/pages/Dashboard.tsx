@@ -82,22 +82,11 @@ function Dashboard() {
     if (!inMint || !outMint || !amountInAtoms) return;
     setLoading(true);
     try {
-      const best = await getQuote({
-        inputMint: inMint,
-        outputMint: outMint,
-        amount: amountInAtoms,
-        slippageBps: 50,
-      });
-      setRouteBest(best.data?.[0] ?? null);
+      const bestResp   = await getQuote({ inputMint: inMint, outputMint: outMint, amount: amountInAtoms, slippageBps: 50 });
+      setRouteBest(bestResp); // было: best.data?.[0]
 
-      const direct = await getQuote({
-        inputMint: inMint,
-        outputMint: outMint,
-        amount: amountInAtoms,
-        slippageBps: 50,
-        onlyDirectRoutes: true,
-      });
-      setRouteDirect(direct.data?.[0] ?? null);
+      const directResp = await getQuote({ inputMint: inMint, outputMint: outMint, amount: amountInAtoms, slippageBps: 50, onlyDirectRoutes: true });
+      setRouteDirect(directResp); // было: direct.data?.[0]
     } finally {
       setLoading(false);
     }
