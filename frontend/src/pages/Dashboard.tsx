@@ -141,7 +141,7 @@ function Dashboard() {
         </div>
 
         {/* Card */}
-        <div className="max-w-4xl mx-auto rounded-3xl overflow-hidden bg-[#0f1624]/70 backdrop-blur-2xl border border-white/10 shadow-[0_25px_70px_-30px_rgba(0,0,0,0.7)]">
+        <div className="max-w-4xl mx-auto rounded-3xl overflow-visible bg-[#0f1624]/70 backdrop-blur-2xl border border-white/10 shadow-[0_25px_70px_-30px_rgba(0,0,0,0.7)]">
           {/* Tabs */}
           <div className="p-4 border-b border-white/10">
             <div className="grid grid-cols-4 gap-2 rounded-full bg-white/5 p-1">
