@@ -1,11 +1,25 @@
-// import { motion } from "framer-motion";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { WalletReadyState } from "@solana/wallet-adapter-base";
+
+const WALLET_DOWNLOAD_LINKS: Record<string, string> = {
+  Phantom: "https://phantom.app/download",
+  Solflare: "https://solflare.com/download",
+  MathWallet: "https://mathwallet.org/en-us/",
+};
 
 function Dashboard() {
-  useWallet();
+  const { wallets } = useWallet();
 
-  // Using WalletMultiButton to handle provider connection UX
+  // проверка и подсказка
+  wallets.forEach((wallet) => {
+    if (wallet.readyState === WalletReadyState.NotDetected) {
+      const url = WALLET_DOWNLOAD_LINKS[wallet.adapter.name];
+      if (url) {
+        console.log(`⚠️ ${wallet.adapter.name} не найден. Скачайте здесь: ${url}`);
+      }
+    }
+  });
 
   return (
     <div className="min-h-screen relative overflow-x-hidden text-white">
@@ -21,21 +35,31 @@ function Dashboard() {
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold">Madagascar</h1>
           </div>
+
           <WalletMultiButton className="!bg-indigo-600 hover:!bg-indigo-500 !rounded-xl !px-4 !py-2 !font-semibold" />
         </div>
 
-        {/* Tabs + Card */}
+        {/* Tabs + Swap Card */}
         <div className="max-w-4xl mx-auto rounded-3xl overflow-hidden bg-[#0f1624]/70 backdrop-blur-2xl border border-white/10 shadow-[0_25px_70px_-30px_rgba(0,0,0,0.7)]">
+          {/* Tabs */}
           <div className="p-4 border-b border-white/10">
-            <div className="inline-flex rounded-full bg-white/5 p-1">
-              <button className="px-5 py-2 rounded-full bg-indigo-500/30 text-indigo-100 font-semibold">Swap</button>
-              <button className="px-5 py-2 rounded-full text-slate-200 hover:bg-white/10">Pro Trade</button>
-              <button className="px-5 py-2 rounded-full text-slate-200 hover:bg-white/10">Bridge</button>
-              <button className="px-5 py-2 rounded-full text-slate-200 hover:bg-white/10">Pools</button>
+            <div className="grid grid-cols-4 gap-2 rounded-full bg-white/5 p-1">
+              <button className="w-full py-2 rounded-full bg-indigo-500/30 text-indigo-100 font-semibold">
+                Swap
+              </button>
+              <button className="w-full py-2 rounded-full text-slate-200 hover:bg-white/10">
+                Pro Trade
+              </button>
+              <button className="w-full py-2 rounded-full text-slate-200 hover:bg-white/10">
+                Bridge
+              </button>
+              <button className="w-full py-2 rounded-full text-slate-200 hover:bg-white/10">
+                Pools
+              </button>
             </div>
           </div>
 
-          {/* Swap Card */}
+          {/* Swap UI */}
           <div className="p-6 md:p-10">
             <div className="grid gap-7">
               {/* Give */}
@@ -45,7 +69,10 @@ function Dashboard() {
                   <span className="text-slate-400">Balance: 12.5 SOL</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <input className="flex-1 bg-black/20 rounded-2xl px-5 py-4 text-4xl font-extrabold outline-none border border-white/10 focus:border-indigo-400/60 placeholder:text-white/40" placeholder="7.5" />
+                  <input
+                    className="flex-1 bg-black/20 rounded-2xl px-5 py-4 text-4xl font-extrabold outline-none border border-white/10 focus:border-indigo-400/60 placeholder:text-white/40"
+                    placeholder="7.5"
+                  />
                   <button className="px-4 py-2 rounded-xl bg-black/30 border border-white/10 flex items-center gap-2">
                     <span className="h-6 w-6 rounded-full bg-gradient-to-br from-indigo-400 to-fuchsia-400" />
                     <span className="font-semibold">SOL</span>
@@ -66,7 +93,10 @@ function Dashboard() {
                   <span className="text-slate-400">Balance: 5,430 USDC</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <input className="flex-1 bg-black/20 rounded-2xl px-5 py-4 text-4xl font-extrabold outline-none border border-white/10 focus:border-indigo-400/60 placeholder:text-white/40" placeholder="210.75" />
+                  <input
+                    className="flex-1 bg-black/20 rounded-2xl px-5 py-4 text-4xl font-extrabold outline-none border border-white/10 focus:border-indigo-400/60 placeholder:text-white/40"
+                    placeholder="210.75"
+                  />
                   <button className="px-4 py-2 rounded-xl bg-black/30 border border-white/10 flex items-center gap-2">
                     <span className="h-6 w-6 rounded-full bg-gradient-to-br from-sky-400 to-blue-600" />
                     <span className="font-semibold">USDC</span>
@@ -75,7 +105,7 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* Meta */}
+              {/* Meta info */}
               <div className="text-slate-300 text-sm">
                 <div className="flex items-center gap-3">
                   <div className="flex-1">Exchange rate</div>
@@ -90,8 +120,11 @@ function Dashboard() {
                 </div>
               </div>
 
+              {/* Swap button */}
               <div className="pt-2">
-                <button className="w-full rounded-2xl px-6 py-4 bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 hover:from-indigo-400 hover:via-violet-400 hover:to-fuchsia-400 font-semibold shadow-[0_18px_45px_-15px_rgba(99,102,241,0.6)]">Swap</button>
+                <button className="w-full rounded-2xl px-6 py-4 bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 hover:from-indigo-400 hover:via-violet-400 hover:to-fuchsia-400 font-semibold shadow-[0_18px_45px_-15px_rgba(99,102,241,0.6)]">
+                  Swap
+                </button>
               </div>
             </div>
           </div>
@@ -102,5 +135,3 @@ function Dashboard() {
 }
 
 export default Dashboard;
-
-
