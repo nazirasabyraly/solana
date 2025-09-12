@@ -182,8 +182,21 @@ function Dashboard() {
 
               {/* Switch icon */}
               <div className="grid place-items-center">
-                <div className="h-10 w-10 grid place-items-center rounded-full bg-black/40 border border-white/10">↕</div>
-              </div>
+              <button
+                onClick={() => {
+                const prevIn = tokenIn;
+                const prevOut = tokenOut;
+                setTokenIn(prevOut);
+                setTokenOut(prevIn);
+                setRouteBest(null);
+                setRouteDirect(null);
+              }}
+    className="h-10 w-10 grid place-items-center rounded-full bg-black/40 border border-white/10 hover:bg-indigo-600/30 transition"
+  >
+    ↕
+  </button>
+</div>
+
 
               {/* Receive */}
               <div className="rounded-2xl bg-[#0b1220]/60 border border-white/10 p-5">
