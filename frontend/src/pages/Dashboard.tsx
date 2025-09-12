@@ -19,7 +19,7 @@ function Dashboard() {
             <div className="h-9 w-9 rounded-xl bg-indigo-500/20 ring-1 ring-indigo-400/30 grid place-items-center">
               <span className="text-indigo-300 text-lg">◇</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Solana Prime</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Madagascar</h1>
           </div>
           <WalletMultiButton className="!bg-indigo-600 hover:!bg-indigo-500 !rounded-xl !px-4 !py-2 !font-semibold" />
         </div>
