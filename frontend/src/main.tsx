@@ -20,7 +20,7 @@ import {
 
 import "@solana/wallet-adapter-react-ui/styles.css";
 
-const endpoint = "http://127.0.0.1:8899"; // локальный test-validator
+const endpoint = "https://api.devnet.solana.com";
 
 const wallets = [
   new PhantomWalletAdapter(),
