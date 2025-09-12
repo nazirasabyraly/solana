@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
+import TokenSelector from "../components/TokenSelector";
 
 const WALLET_DOWNLOAD_LINKS: Record<string, string> = {
   Phantom: "https://phantom.app/download",
@@ -10,6 +12,10 @@ const WALLET_DOWNLOAD_LINKS: Record<string, string> = {
 
 function Dashboard() {
   const { wallets } = useWallet();
+
+  // стейты выбора токенов
+  const [tokenIn, setTokenIn] = useState("SOL");
+  const [tokenOut, setTokenOut] = useState("USDC");
 
   // проверка и подсказка
   wallets.forEach((wallet) => {
@@ -66,18 +72,14 @@ function Dashboard() {
               <div className="rounded-2xl bg-[#0b1220]/60 border border-white/10 p-5">
                 <div className="flex items-center justify-between mb-2 text-slate-300 text-sm">
                   <span>You give</span>
-                  <span className="text-slate-400">Balance: 12.5 SOL</span>
+                  <span className="text-slate-400">Balance: 12.5 {tokenIn}</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <input
                     className="flex-1 bg-black/20 rounded-2xl px-5 py-4 text-4xl font-extrabold outline-none border border-white/10 focus:border-indigo-400/60 placeholder:text-white/40"
                     placeholder="7.5"
                   />
-                  <button className="px-4 py-2 rounded-xl bg-black/30 border border-white/10 flex items-center gap-2">
-                    <span className="h-6 w-6 rounded-full bg-gradient-to-br from-indigo-400 to-fuchsia-400" />
-                    <span className="font-semibold">SOL</span>
-                    <span className="text-slate-400">▾</span>
-                  </button>
+                  <TokenSelector selected={tokenIn} onChange={setTokenIn} />
                 </div>
               </div>
 
@@ -90,18 +92,14 @@ function Dashboard() {
               <div className="rounded-2xl bg-[#0b1220]/60 border border-white/10 p-5">
                 <div className="flex items-center justify-between mb-2 text-slate-300 text-sm">
                   <span>You get</span>
-                  <span className="text-slate-400">Balance: 5,430 USDC</span>
+                  <span className="text-slate-400">Balance: 5,430 {tokenOut}</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <input
                     className="flex-1 bg-black/20 rounded-2xl px-5 py-4 text-4xl font-extrabold outline-none border border-white/10 focus:border-indigo-400/60 placeholder:text-white/40"
                     placeholder="210.75"
                   />
-                  <button className="px-4 py-2 rounded-xl bg-black/30 border border-white/10 flex items-center gap-2">
-                    <span className="h-6 w-6 rounded-full bg-gradient-to-br from-sky-400 to-blue-600" />
-                    <span className="font-semibold">USDC</span>
-                    <span className="text-slate-400">▾</span>
-                  </button>
+                  <TokenSelector selected={tokenOut} onChange={setTokenOut} />
                 </div>
               </div>
 
@@ -109,7 +107,7 @@ function Dashboard() {
               <div className="text-slate-300 text-sm">
                 <div className="flex items-center gap-3">
                   <div className="flex-1">Exchange rate</div>
-                  <div>1 SOL ≈ 140.50 USDC</div>
+                  <div>1 {tokenIn} ≈ 140.50 {tokenOut}</div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex-1">Price impact</div>
