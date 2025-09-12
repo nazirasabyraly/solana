@@ -1,75 +1,47 @@
+import { Link } from "react-router-dom";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useState } from "react";
 import { motion } from "framer-motion";
 
 function App() {
   const { publicKey } = useWallet();
   const [amountIn, setAmountIn] = useState("");
-  const [amountOut, setAmountOut] = useState("");
+  const amountOut = "";
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden selection:bg-indigo-500/30 selection:text-white">
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-x-hidden selection:bg-indigo-500/30 selection:text-white">
       {/* 🔹 Animated gradient backdrop */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-800 via-slate-900 to-black animate-gradient-x" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0b1220] via-[#0a1020] to-[#0c1324]" />
       <div className="aurora" />
 
-      {/* 🔹 Subtle grid overlay */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.08]"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.12) 1px, transparent 1px)",
-          backgroundSize: "36px 36px",
-        }}
-      />
+      {/* Removed grid overlay for a cleaner look */}
 
-      {/* 🔹 Floating glow orbs */}
-      <motion.div
-        aria-hidden
-        initial={{ opacity: 0, y: 40, scale: 0.9 }}
-        animate={{ opacity: 0.45, y: 0, scale: 1 }}
-        transition={{ duration: 1.2, ease: "easeOut" }}
-        className="absolute -top-24 -left-24 h-[28rem] w-[28rem] rounded-full blur-3xl"
-        style={{
-          background:
-            "radial-gradient(closest-side, rgba(99,102,241,0.6), transparent 70%)",
-        }}
-      />
-      <motion.div
-        aria-hidden
-        initial={{ opacity: 0, y: -40, scale: 0.9 }}
-        animate={{ opacity: 0.35, y: 0, scale: 1 }}
-        transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
-        className="absolute -bottom-28 -right-28 h-[30rem] w-[30rem] rounded-full blur-3xl"
-        style={{
-          background:
-            "radial-gradient(closest-side, rgba(168,85,247,0.55), transparent 70%)",
-        }}
-      />
+      {/* Simplified background: remove orbs for a cleaner, modern look */}
 
-      {/* 🔹 Main card with animation */}
+      {/* 🔹 Hero section */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative z-10 w-full max-w-lg text-white"
+        className="relative z-10 w-full max-w-5xl text-white pt-14 pb-16 px-6 text-center"
       >
         {/* Card shell */}
-        <div className="relative rounded-3xl p-8 sm:p-10 bg-slate-800/60 backdrop-blur-2xl ring-1 ring-white/10 shadow-[0_0_0_1px_rgba(255,255,255,0.06)]">
+        <div className="relative rounded-3xl p-10 sm:p-12 bg-white/5 backdrop-blur-2xl">
           {/* Glow border */}
-          <div className="pointer-events-none absolute inset-0 rounded-2xl [mask-image:radial-gradient(closest-side,black,transparent)] shadow-[0_0_80px_15px_rgba(99,102,241,0.25)]" />
+          <div className="pointer-events-none absolute inset-0 rounded-2xl" />
 
-          <h1 className="text-center mb-8">
-            <span className="block tracking-[0.35em] !text-indigo-200 [text-shadow:0_1px_8px_rgba(99,102,241,0.35)]" style={{ color: "#c7d2fe", fontSize: "clamp(1.125rem, 1.5vw, 1.5rem)" }}>SOLANA DEX</span>
-            <span className="font-extrabold !text-white [text-shadow:0_2px_18px_rgba(99,102,241,0.45)] mix-blend-normal" style={{ color: "#ffffff", lineHeight: 1.05, fontSize: "clamp(3rem, 6vw, 7rem)" }}>
-              ⚡ My Solana DEX
-            </span>
+          <h1 className="text-center mb-6">
+            <span className="block tracking-[0.28em] text-indigo-200" style={{ fontSize: "1.3rem" }}>SOLANA DEX</span>
+            <span className="font-extrabold text-white" style={{ lineHeight: 1.06, fontSize: "clamp(3rem, 7vw, 6.5rem)" }}>⚡ My Solana DEX</span>
           </h1>
 
-          <div className="flex justify-center mb-8">
-            <WalletMultiButton className="!bg-indigo-600 hover:!bg-indigo-700 !rounded-xl !px-5 !py-2.5 !transition-colors !shadow-lg !shadow-indigo-500/20" />
+          <p className="mx-auto max-w-3xl text-white/95 text-xl sm:text-2xl leading-relaxed mb-10">
+            Trade tokens on Solana with a sleek UI, low fees, and fast confirmation. Click Start to open your dashboard and begin.
+          </p>
+          <div className="flex items-center justify-center">
+            <Link to="/dashboard" className="text-white" style={{ borderRadius: 14, padding: "16px 34px", fontWeight: 800, fontSize: 20, background: "#6366f1", boxShadow: "0 16px 40px -12px rgba(99,102,241,0.7)" }}>
+              Start
+            </Link>
           </div>
 
           {publicKey ? (
@@ -110,13 +82,11 @@ function App() {
                 Swap
               </motion.button>
             </>
-          ) : (
-            <p className="mt-6 text-center !text-slate-100 [text-shadow:0_1px_6px_rgba(0,0,0,0.35)]" style={{ color: "#f1f5f9", fontSize: "clamp(1rem, 1.2vw, 1.4rem)" }}>
-              Подключите кошелёк, чтобы начать 🚀
-            </p>
-          )}
+          ) : null}
         </div>
       </motion.div>
+
+      {/* Minimal landing keeps just hero and CTA per your request */}
     </div>
   );
 }

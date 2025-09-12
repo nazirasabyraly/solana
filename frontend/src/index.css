@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* App base layout */
 html, body, #root {
@@ -12,6 +10,7 @@ body {
   min-width: 320px;
   background: #0b1020;
   font-family: Arial, Helvetica, sans-serif !important;
+  color: rgba(255,255,255,0.95);
 }
 
 /* Ensure common controls also use Arial */
