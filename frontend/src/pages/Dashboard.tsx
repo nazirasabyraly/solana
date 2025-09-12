@@ -176,7 +176,11 @@ function Dashboard() {
                     className="flex-1 bg-black/20 rounded-2xl px-5 py-4 text-4xl font-extrabold outline-none border border-white/10 focus:border-indigo-400/60 placeholder:text-white/40"
                     placeholder="7.5"
                   />
-                  <TokenSelector selected={tokenIn} onChange={(s) => { setTokenIn(s); setRouteBest(null); setRouteDirect(null); }} />
+                  <TokenSelector 
+                  selected={tokenIn} 
+                  onChange={(s) => { setTokenIn(s); setRouteBest(null); setRouteDirect(null); }} 
+                  exclude={tokenOut} 
+                  />
                 </div>
               </div>
 
@@ -191,7 +195,7 @@ function Dashboard() {
                 setRouteBest(null);
                 setRouteDirect(null);
               }}
-    className="h-10 w-10 grid place-items-center rounded-full bg-black/40 border border-white/10 hover:bg-indigo-600/30 transition"
+        className="h-10 w-10 grid place-items-center rounded-full bg-black/40 border border-white/10 hover:bg-indigo-600/30 transition"
   >
     ↕
   </button>
@@ -211,7 +215,11 @@ function Dashboard() {
                     className="flex-1 bg-black/20 rounded-2xl px-5 py-4 text-4xl font-extrabold outline-none border border-white/10 placeholder:text-white/40"
                     placeholder="—"
                   />
-                  <TokenSelector selected={tokenOut} onChange={(s) => { setTokenOut(s); setRouteBest(null); setRouteDirect(null); }} />
+                  <TokenSelector 
+                  selected={tokenOut} 
+                  onChange={(s) => { setTokenOut(s); setRouteBest(null); setRouteDirect(null); }} 
+                  exclude={tokenIn} 
+                  />
                 </div>
               </div>
 

@@ -6,9 +6,10 @@ import { TOKENS } from "../config/tokens";
 type Props = {
   selected: string;
   onChange: (s: string) => void;
+  exclude?: string; // 🚀 новая пропса
 };
 
-export default function TokenSelector({ selected, onChange }: Props) {
+export default function TokenSelector({ selected, onChange, exclude }: Props) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -20,6 +21,10 @@ export default function TokenSelector({ selected, onChange }: Props) {
   });
 
   const token = TOKENS.find((t) => t.symbol === selected);
+
+  const filtered = exclude
+    ? TOKENS.filter((t) => t.symbol !== exclude)
+    : TOKENS;
 
   const calcPos = () => {
     const el = btnRef.current;
@@ -83,7 +88,7 @@ export default function TokenSelector({ selected, onChange }: Props) {
             className="z-[10000]"
           >
             <div className="max-h-[60vh] overflow-auto bg-[#0f1624] border border-white/10 rounded-2xl shadow-2xl backdrop-blur">
-              {TOKENS.map((t) => (
+              {filtered.map((t) => (
                 <button
                   key={t.symbol}
                   onClick={() => {
