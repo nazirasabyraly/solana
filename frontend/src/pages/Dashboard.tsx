@@ -1,7 +1,12 @@
 // import { motion } from "framer-motion";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 function Dashboard() {
+  useWallet();
+
+  // Using WalletMultiButton to handle provider connection UX
+
   return (
     <div className="min-h-screen relative overflow-x-hidden text-white">
       <div className="absolute inset-0 bg-gradient-to-b from-[#0b1220] via-[#0a1020] to-[#0c1324]" />

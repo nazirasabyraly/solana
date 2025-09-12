@@ -23,7 +23,7 @@ function App() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative z-10 w-full max-w-5xl text-white pt-14 pb-16 px-6 text-center"
+        className="relative z-10 w-full max-w-6xl text-white pt-14 pb-16 px-6 text-center"
       >
         {/* Card shell */}
         <div className="relative rounded-3xl p-10 sm:p-12 bg-white/5 backdrop-blur-2xl">
@@ -32,7 +32,7 @@ function App() {
 
           <h1 className="text-center mb-6">
             <span className="block tracking-[0.28em] text-indigo-200" style={{ fontSize: "1.3rem" }}>SOLANA DEX</span>
-            <span className="font-extrabold text-white" style={{ lineHeight: 1.06, fontSize: "clamp(3rem, 7vw, 6.5rem)" }}>⚡ My Solana DEX</span>
+            <span className="font-extrabold text-white whitespace-nowrap" style={{ lineHeight: 1.06, fontSize: "clamp(3rem, 7vw, 6.5rem)", whiteSpace: "nowrap" }}>⚡ My Solana DEX</span>
           </h1>
 
           <p className="mx-auto max-w-3xl text-white/95 text-xl sm:text-2xl leading-relaxed mb-10">
