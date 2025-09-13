@@ -107,17 +107,10 @@ function Dashboard() {
   const reqIdRef = useRef(0);
 
   useEffect(() => {
-    // Стоп-условия: нет суммы, одинаковые токены и т.п.
-    if (!inMint || !outMint || inMint === outMint || !amountInAtoms) {
-      setRouteBest(null);
-      setRouteDirect(null);
-      return;
-    }
+    if (activeTab !== 'pro') return;
+    if (!inMint || !outMint || !amountInAtoms) return;
 
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      const myReq = ++reqIdRef.current;
-      setLoading(true);
+    const id = setInterval(async () => {
       try {
         const best = await getQuote({
           inputMint: inMint,
@@ -125,29 +118,14 @@ function Dashboard() {
           amount: amountInAtoms,
           slippageBps: 50,
         });
-        if (myReq !== reqIdRef.current) return;
-        setRouteBest(best);
-
-        const direct = await getQuote({
-          inputMint: inMint,
-          outputMint: outMint,
-          amount: amountInAtoms,
-          slippageBps: 50,
-          onlyDirectRoutes: true,
-        });
-        if (myReq !== reqIdRef.current) return;
-        setRouteDirect(direct);
+        setRouteBest(best); // это обновит priceUi -> пушнёт точку на график
       } catch (e) {
-        console.error("auto-quote error", e);
-      } finally {
-        if (myReq === reqIdRef.current) setLoading(false);
+        console.warn('pro poll quote error', e);
       }
-    }, 500);
+    }, 4000); // можно 3000–5000мс
 
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [inMint, outMint, amountInAtoms]);
+    return () => clearInterval(id);
+  }, [activeTab, inMint, outMint, amountInAtoms]);
 
   // 5) Свап
   async function onSwap() {
@@ -180,6 +158,13 @@ function Dashboard() {
         .filter(Boolean)
         .join(" → ")
     : null;
+
+  useEffect(() => {
+    if (!priceUi) return;
+    if (typeof window !== 'undefined' && window.__pushQuotePoint) {
+      window.__pushQuotePoint(priceUi); // priceUi — число курса tokenIn/tokenOut
+    }
+  }, [priceUi]);
 
   return (
     <div className="min-h-screen relative overflow-x-hidden text-white">
@@ -330,7 +315,15 @@ function Dashboard() {
               </div>
             )}
 
-            {activeTab === "pro" && <ProTradeView />}
+            <div className={activeTab === "pro" ? "block" : "hidden"}>
+              <ProTradeView
+                baseSymbol={tokenIn}
+                quoteSymbol={tokenOut}
+                baseUsdFeed={import.meta.env.VITE_SOL_USD_FEED}
+                quoteUsdFeed={import.meta.env.VITE_USDC_USD_FEED}
+                lastExecutedPrice={priceUi || undefined}
+              />
+            </div>
             {activeTab === "bridge" && <BridgeView />}
             {activeTab === "pools" && <PoolsView />}
           </div>

@@ -1,121 +1,173 @@
-// ProTradeView.tsx
-import { useState } from "react";
-import toast from "react-hot-toast";
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { usePythPrice } from '../hooks/usePythPrice'
 
-export default function ProTradeView() {
-  const [price, setPrice] = useState("140.50");
-  const [amount, setAmount] = useState("0.0");
-  const [total, setTotal] = useState("0.0");
-  const [mode, setMode] = useState<"buy" | "sell">("buy");
+declare global { interface Window { __pushQuotePoint?: (v:number)=>void } }
+type Point = { time:number; value:number }
+type ChartApi = any; type SeriesApi = any
 
-  // пересчёт "Всего" по цене и количеству
-  const handleAmountChange = (val: string) => {
-    setAmount(val);
-    const numVal = parseFloat(val) || 0;
-    const numPrice = parseFloat(price) || 0;
-    setTotal((numVal * numPrice).toFixed(2));
-  };
+export default function ProTradeView(props:{
+  baseSymbol:string; quoteSymbol:string;
+  baseUsdFeed?:string; quoteUsdFeed?:string;
+  lastExecutedPrice?:number;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const chartRef = useRef<ChartApi|null>(null)
+  const lineRef  = useRef<SeriesApi|null>(null)
+  const fairRef  = useRef<SeriesApi|null>(null)
+  const [err, setErr] = useState<string|null>(null)
+  const [seriesData, setSeriesData] = useState<Point[]>([])
+  const [lastRoute, setLastRoute]   = useState<number>()
+  const [range, setRange] = useState<'15m'|'1h'|'4h'|'1d'|'7d'>('15m')
 
-  const handleSubmit = () => {
-    if (parseFloat(amount) <= 0) {
-      toast.error("Введите количество SOL", {
-        style: { background: "#1f1f1f", color: "#fff" },
-      });
-      return;
+  // live fair из Pyth
+  const baseUsd = usePythPrice(props.baseUsdFeed)
+  const quoteUsd = usePythPrice(props.quoteUsdFeed)
+  const fairLive = useMemo(() => {
+    if (!baseUsd?.price || !quoteUsd?.price) return undefined
+    const base = baseUsd.price * Math.pow(10, baseUsd.expo ?? 0)
+    const quote = quoteUsd.price * Math.pow(10, quoteUsd.expo ?? 0)
+    if (!quote) return undefined
+    return base / quote
+  }, [baseUsd, quoteUsd])
+
+  // init chart (адаптивный импорт под любую версию)
+  useEffect(() => {
+    let ro: ResizeObserver | null = null, cancelled = false
+    ;(async () => {
+      try {
+        if (!containerRef.current) return
+        const mod: any = await import('lightweight-charts')
+        if (cancelled || !containerRef.current) return
+        const M = mod?.createChart ? mod : (mod?.default || mod)
+        const createChart = M.createChart
+        const LineStyle   = M.LineStyle || M.enums?.LineStyle
+        const ColorType   = M.ColorType || M.enums?.ColorType
+        const chart = createChart(containerRef.current, {
+          layout: { background: { type: ColorType?.Solid ?? 0, color: 'transparent' }, textColor: '#cbd5e1' },
+          grid:   { vertLines: { color:'#111827' }, horzLines: { color:'#111827' } },
+          rightPriceScale: { borderVisible: false },
+          timeScale:       { borderVisible: false },
+          width: containerRef.current.clientWidth || 600, height: 300,
+        })
+        const addLine = chart.addLineSeries || chart.addSeries
+        const line = addLine.call(chart, { color:'#60a5fa', lineWidth:2 })
+        const fair = addLine.call(chart, { color:'#22c55e', lineWidth:1, lineStyle: LineStyle?.Dotted ?? 1 })
+        chartRef.current = chart; lineRef.current = line; fairRef.current = fair
+
+        if (seriesData.length) line.setData(seriesData)
+
+        ro = new ResizeObserver(() => chart.applyOptions({ width: containerRef.current!.clientWidth, height: 300 }))
+        ro.observe(containerRef.current)
+      } catch (e:any) { setErr(e?.message || 'chart init error') }
+    })()
+    return () => { ro?.disconnect(); chartRef.current?.remove(); chartRef.current=null; lineRef.current=null; fairRef.current=null }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // загрузка ИСТОРИИ fair по диапазону (base/USD и quote/USD → base/quote)
+  function rangeToWindow(now:number) {
+    const m=60, h=3600, d=86400
+    switch (range) {
+      case '15m': return { from: now-15*m, to: now, res: 5 }
+      case '1h':  return { from: now-1*h , to: now, res: 30 }
+      case '4h':  return { from: now-4*h , to: now, res: 60 }
+      case '1d':  return { from: now-1*d , to: now, res: 300 }
+      case '7d':  return { from: now-7*d , to: now, res: 900 }
     }
+  }
 
-    if (mode === "buy") {
-      toast.success(`Покупка ${amount} SOL по ${price} USDC`, {
-        icon: "🟢",
-        style: { background: "#1a2e1a", color: "#b6fcb6" },
-      });
-    } else {
-      toast.success(`Продажа ${amount} SOL по ${price} USDC`, {
-        icon: "🔴",
-        style: { background: "#2e1a1a", color: "#fcb6b6" },
-      });
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!props.baseUsdFeed || !props.quoteUsdFeed || !fairRef.current) return
+        const now = Math.floor(Date.now()/1000)
+        const { from, to, res } = rangeToWindow(now)!
+        const fetchHist = (feed:string) =>
+          fetch(`/api/pyth/history?feed=${feed}&from=${from}&to=${to}&res=${res}`).then(r=>r.json()) as Promise<Point[]>
+
+        const [b, q] = await Promise.all([fetchHist(props.baseUsdFeed), fetchHist(props.quoteUsdFeed)])
+        const mapQ = new Map(q.map(p=>[p.time, p.value]))
+        const merged = b
+          .filter(p => mapQ.has(p.time))
+          .map(p => ({ time: p.time, value: p.value / (mapQ.get(p.time) as number) }))
+          .sort((a,b)=>a.time-b.time)
+
+        fairRef.current.setData(merged)
+        // подложим базовую сетку, чтобы ось была адекватной
+        setSeriesData(merged) // ось и масштаб
+      } catch (e) {
+        console.warn('history load failed', e)
+      }
+    })()
+  }, [props.baseUsdFeed, props.quoteUsdFeed, range])
+
+  // публичный пушер для live route
+  useEffect(() => {
+    const push = (v:number) => {
+      const p = { time: Math.floor(Date.now()/1000), value: v }
+      setLastRoute(v)
+      setSeriesData(prev => {
+        const next = [...prev, p].slice(-240)
+        lineRef.current?.setData(next)
+        if (fairRef.current && fairLive) {
+          const t0 = next[0]?.time ?? p.time-600
+          fairRef.current.setData([{ time:t0, value: fairLive }, { time: p.time, value: fairLive }])
+        }
+        return next
+      })
     }
-  };
+    if (typeof window !== 'undefined') window.__pushQuotePoint = push
+    return () => { if (typeof window !== 'undefined') delete window.__pushQuotePoint }
+  }, [fairLive])
+
+  // маркер сделки
+  useEffect(() => {
+    if (!lineRef.current || !props.lastExecutedPrice) return
+    const t = Math.floor(Date.now()/1000)
+    if (typeof lineRef.current.setMarkers === 'function') {
+      lineRef.current.setMarkers([{ time:t, position:'aboveBar', color:'#f59e0b', shape:'circle', text:'Swap' }])
+    }
+  }, [props.lastExecutedPrice])
+
+  // метрики
+  const { currentRoute, bps } = useMemo(() => {
+    const v = seriesData.length ? seriesData[seriesData.length-1].value : lastRoute
+    if (!v || !fairLive) return { currentRoute:v, bps: undefined as number|undefined }
+    const diff = (v / fairLive - 1) * 10_000
+    return { currentRoute: v, bps: diff }
+  }, [seriesData, fairLive, lastRoute])
+
+  const bpsColor =
+    bps == null ? 'text-slate-400'
+      : Math.abs(bps) <= 20 ? 'text-emerald-400'
+      : Math.abs(bps) <= 80 ? 'text-amber-400'
+      : 'text-rose-400'
 
   return (
-    <div className="grid grid-cols-3 gap-6">
-      {/* Левая колонка - форма */}
-      <div className="col-span-1 bg-[#0b1220]/60 border border-white/10 rounded-2xl p-5">
-        <div className="flex gap-4 mb-4">
-          <button
-            onClick={() => setMode("buy")}
-            className={`flex-1 py-2 rounded-lg font-semibold ${
-              mode === "buy"
-                ? "bg-green-600 text-white"
-                : "bg-green-600/20 text-green-200"
-            }`}
-          >
-            Купить
-          </button>
-          <button
-            onClick={() => setMode("sell")}
-            className={`flex-1 py-2 rounded-lg font-semibold ${
-              mode === "sell"
-                ? "bg-red-600 text-white"
-                : "bg-red-600/20 text-red-200"
-            }`}
-          >
-            Продать
-          </button>
+    <div className="rounded-xl border border-white/10 p-3">
+      <div className="flex items-center justify-between mb-2 text-sm text-slate-300">
+        <div>
+          {props.baseSymbol}/{props.quoteSymbol} —
+          <span className="text-sky-300"> blue</span>: route •
+          <span className="text-emerald-400"> green</span>: Pyth fair
         </div>
-
-        <label className="block text-sm text-slate-300 mb-1">Цена (USDC)</label>
-        <input
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          className="w-full mb-3 px-3 py-2 rounded-lg bg-black/30 border border-white/10"
-        />
-
-        <label className="block text-sm text-slate-300 mb-1">Количество (SOL)</label>
-        <input
-          value={amount}
-          onChange={(e) => handleAmountChange(e.target.value)}
-          className="w-full mb-3 px-3 py-2 rounded-lg bg-black/30 border border-white/10"
-        />
-
-        <label className="block text-sm text-slate-300 mb-1">Всего (USDC)</label>
-        <input
-          value={total}
-          readOnly
-          className="w-full mb-4 px-3 py-2 rounded-lg bg-black/30 border border-white/10"
-        />
-
-        <button
-          onClick={handleSubmit}
-          className={`w-full py-3 rounded-xl font-semibold ${
-            mode === "buy" ? "bg-green-500" : "bg-red-500"
-          }`}
-        >
-          {mode === "buy" ? "Купить SOL" : "Продать SOL"}
-        </button>
-      </div>
-
-      {/* Центр - график */}
-      <div className="col-span-1 bg-[#0b1220]/60 border border-white/10 rounded-2xl p-5 flex items-center justify-center text-slate-400">
-        [Здесь будет график цены]
-      </div>
-
-      {/* Правая колонка - книга ордеров */}
-      <div className="col-span-1 bg-[#0b1220]/60 border border-white/10 rounded-2xl p-5">
-        <h3 className="text-slate-200 mb-3">Книга ордеров</h3>
-        <div className="text-sm grid grid-cols-3 text-slate-400 mb-2">
-          <span>Цена</span>
-          <span>Кол-во</span>
-          <span>Всего</span>
+        <div className="flex items-center gap-2">
+          {(['15m','1h','4h','1d','7d'] as const).map(r => (
+            <button key={r} onClick={()=>setRange(r)}
+              className={`px-2 py-0.5 rounded text-xs ${range===r?'bg-white/10':'hover:bg-white/5'}`}>{r}</button>
+          ))}
         </div>
-        <div className="text-red-400 text-sm">140.85 | 0.50 | 70.42</div>
-        <div className="text-red-400 text-sm">140.82 | 1.20 | 168.98</div>
-        <div className="text-red-400 text-sm mb-2">140.80 | 5.60 | 788.48</div>
-        <div className="text-green-400 font-bold text-center my-2">140.55 USDC</div>
-        <div className="text-green-400 text-sm">140.50 | 4.10 | 576.05</div>
-        <div className="text-green-400 text-sm">140.48 | 2.30 | 323.10</div>
-        <div className="text-green-400 text-sm">140.45 | 10.80 | 1516.86</div>
+        <div className="flex items-center gap-4">
+          <div className="text-slate-400">Fair:&nbsp;{fairLive ? fairLive.toFixed(6) : '—'}</div>
+          <div>Route:&nbsp;{currentRoute ? currentRoute.toFixed(6) : '—'}</div>
+          <div className={bpsColor}>Δ:&nbsp;{bps != null ? `${bps.toFixed(1)} bps` : '—'}</div>
+        </div>
       </div>
+      {err ? (
+        <div className="h-[300px] grid place-items-center text-rose-300">Chart error: {err}</div>
+      ) : (
+        <div ref={containerRef} style={{ height: 300, width: '100%' }} />
+      )}
     </div>
-  );
+  )
 }
