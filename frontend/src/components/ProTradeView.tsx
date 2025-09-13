@@ -31,38 +31,73 @@ export default function ProTradeView(props:{
   }, [baseUsd, quoteUsd])
 
   // init chart (адаптивный импорт под любую версию)
+  // ⬇️ стало:
   useEffect(() => {
-    let ro: ResizeObserver | null = null, cancelled = false
+    let cancelled = false
     ;(async () => {
       try {
-        if (!containerRef.current) return
+        // 1) ждём пока контейнер станет видимым и получит ненулевую ширину
+        const waitVisible = async () => {
+          const started = Date.now()
+          while (true) {
+            if (cancelled) return false
+            const el = containerRef.current
+            const w = el?.clientWidth ?? 0
+            const h = el?.clientHeight ?? 0
+            // видим и есть размеры
+            if (el && w > 0 && h > 0) return true
+            // таймаут защиты
+            if (Date.now() - started > 2000) return !!el
+            await new Promise(r => setTimeout(r, 50))
+          }
+        }
+        const ok = await waitVisible()
+        if (!ok || !containerRef.current) return
+
+        // 2) динамический импорт либы
         const mod: any = await import('lightweight-charts')
         if (cancelled || !containerRef.current) return
         const M = mod?.createChart ? mod : (mod?.default || mod)
         const createChart = M.createChart
         const LineStyle   = M.LineStyle || M.enums?.LineStyle
         const ColorType   = M.ColorType || M.enums?.ColorType
+
+        // 3) на всякий случай очищаем контейнер (если HMR/повторный mount)
+        containerRef.current.innerHTML = ''
+
+        // 4) включаем autoSize — никаких ручных ресайзов
         const chart = createChart(containerRef.current, {
+          autoSize: true,
+          height: 300,
           layout: { background: { type: ColorType?.Solid ?? 0, color: 'transparent' }, textColor: '#cbd5e1' },
           grid:   { vertLines: { color:'#111827' }, horzLines: { color:'#111827' } },
           rightPriceScale: { borderVisible: false },
           timeScale:       { borderVisible: false },
-          width: containerRef.current.clientWidth || 600, height: 300,
         })
-        const addLine = chart.addLineSeries || chart.addSeries
-        const line = addLine.call(chart, { color:'#60a5fa', lineWidth:2 })
-        const fair = addLine.call(chart, { color:'#22c55e', lineWidth:1, lineStyle: LineStyle?.Dotted ?? 1 })
-        chartRef.current = chart; lineRef.current = line; fairRef.current = fair
+
+        // 5) только addLineSeries (без загадочного addSeries)
+        const line = chart.addLineSeries({ color:'#60a5fa', lineWidth:2 })
+        const fair = chart.addLineSeries({ color:'#22c55e', lineWidth:1, lineStyle: LineStyle?.Dotted ?? 1 })
+
+        chartRef.current = chart
+        lineRef.current  = line
+        fairRef.current  = fair
 
         if (seriesData.length) line.setData(seriesData)
-
-        ro = new ResizeObserver(() => chart.applyOptions({ width: containerRef.current!.clientWidth, height: 300 }))
-        ro.observe(containerRef.current)
-      } catch (e:any) { setErr(e?.message || 'chart init error') }
+      } catch (e:any) {
+        setErr(e?.message || 'chart init error')
+      }
     })()
-    return () => { ro?.disconnect(); chartRef.current?.remove(); chartRef.current=null; lineRef.current=null; fairRef.current=null }
+    return () => {
+      cancelled = true
+      try { chartRef.current?.remove() } catch {}
+      chartRef.current = null
+      lineRef.current  = null
+      fairRef.current  = null
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
 
   // загрузка ИСТОРИИ fair по диапазону (base/USD и quote/USD → base/quote)
   function rangeToWindow(now:number) {
@@ -86,20 +121,35 @@ export default function ProTradeView(props:{
           fetch(`/api/pyth/history?feed=${feed}&from=${from}&to=${to}&res=${res}`).then(r=>r.json()) as Promise<Point[]>
 
         const [b, q] = await Promise.all([fetchHist(props.baseUsdFeed), fetchHist(props.quoteUsdFeed)])
+
+        // выравниваем по времени (берём только совпадающие t)
         const mapQ = new Map(q.map(p=>[p.time, p.value]))
         const merged = b
           .filter(p => mapQ.has(p.time))
           .map(p => ({ time: p.time, value: p.value / (mapQ.get(p.time) as number) }))
           .sort((a,b)=>a.time-b.time)
 
+        if (merged.length === 0) {
+          // 🔥 фолбэк: плоская fair-линия за окно
+          if (fairLive) {
+            const flat = [{ time: from, value: fairLive }, { time: to, value: fairLive }]
+            fairRef.current.setData(flat)
+            setSeriesData(flat) // ось/масштаб
+          } else {
+            fairRef.current.setData([])
+            setSeriesData([])
+          }
+          return
+        }
+
         fairRef.current.setData(merged)
-        // подложим базовую сетку, чтобы ось была адекватной
-        setSeriesData(merged) // ось и масштаб
+        setSeriesData(merged) // подложка для оси
       } catch (e) {
         console.warn('history load failed', e)
       }
     })()
-  }, [props.baseUsdFeed, props.quoteUsdFeed, range])
+  // ➕ fairLive в зависимостях, чтобы фолбэк обновлялся
+  }, [props.baseUsdFeed, props.quoteUsdFeed, range, fairLive])
 
   // публичный пушер для live route
   useEffect(() => {
@@ -164,9 +214,19 @@ export default function ProTradeView(props:{
         </div>
       </div>
       {err ? (
-        <div className="h-[300px] grid place-items-center text-rose-300">Chart error: {err}</div>
+        <div className="h-[300px] grid place-items-center text-rose-300">
+          Chart error: {err}
+        </div>
       ) : (
-        <div ref={containerRef} style={{ height: 300, width: '100%' }} />
+        <div
+          ref={containerRef}
+          style={{
+            height: 300,
+            width: '100%',
+            position: 'relative',
+            overflow: 'hidden',   // ⬅️ добавлено
+          }}
+        />
       )}
     </div>
   )
