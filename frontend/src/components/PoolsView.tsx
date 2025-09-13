@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import toast from "react-hot-toast";
+import TokenSelector from "./TokenSelector";
 
 export default function PoolsView() {
   const { publicKey } = useWallet();
@@ -44,6 +45,13 @@ export default function PoolsView() {
     }
   };
 
+  // Функция для обмена токенов местами
+  const handleSwitch = () => {
+    const prev = tokenA;
+    setTokenA(tokenB);
+    setTokenB(prev);
+  };
+
   return (
     <div className="max-w-2xl mx-auto bg-[#0b1220]/60 border border-white/10 rounded-2xl p-6 space-y-6">
       <h2 className="text-white text-lg font-semibold mb-2">
@@ -51,13 +59,24 @@ export default function PoolsView() {
       </h2>
 
       {/* Токены */}
-      <div className="flex gap-3">
-        <button className="flex-1 bg-black/40 border border-white/10 rounded-lg py-2">
-          {tokenA}
-        </button>
-        <button className="flex-1 bg-black/40 border border-white/10 rounded-lg py-2">
-          {tokenB}
-        </button>
+      <div className="space-y-3">
+        <div className="flex gap-3">
+          <TokenSelector selected={tokenA} onChange={setTokenA} exclude={tokenB} />
+        </div>
+
+        {/* Кнопка-переключатель */}
+        <div className="flex justify-center">
+          <button
+            onClick={handleSwitch}
+            className="h-10 w-10 grid place-items-center rounded-full bg-black/40 border border-white/10 hover:bg-indigo-600/30 transition"
+          >
+            ↕
+          </button>
+        </div>
+
+        <div className="flex gap-3">
+          <TokenSelector selected={tokenB} onChange={setTokenB} exclude={tokenA} />
+        </div>
       </div>
 
       {/* Комиссия */}
@@ -106,14 +125,14 @@ export default function PoolsView() {
       <div className="flex gap-3">
         <input
           type="number"
-          placeholder="0.0 SOL"
+          placeholder={`0.0 ${tokenA}`}
           value={amountA}
           onChange={(e) => setAmountA(e.target.value)}
           className="flex-1 px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white"
         />
         <input
           type="number"
-          placeholder="0.0 USDC"
+          placeholder={`0.0 ${tokenB}`}
           value={amountB}
           onChange={(e) => setAmountB(e.target.value)}
           className="flex-1 px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white"

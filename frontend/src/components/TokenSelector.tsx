@@ -6,7 +6,7 @@ import { TOKENS } from "../config/tokens";
 type Props = {
   selected: string;
   onChange: (s: string) => void;
-  exclude?: string; // 🚀 новая пропса
+  exclude?: string;
 };
 
 export default function TokenSelector({ selected, onChange, exclude }: Props) {
@@ -74,9 +74,16 @@ export default function TokenSelector({ selected, onChange, exclude }: Props) {
         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/30 border border-white/10 text-white hover:bg-white/10 transition"
       >
         {token && (
-          <img src={token.logo} alt={token.symbol} className="w-5 h-5 rounded-full" />
+          <>
+            <img
+              src={token.logoURI}
+              alt={token.symbol}
+              className="w-6 h-6 rounded-full"
+            />
+            <span className="font-semibold">{token.symbol}</span>
+          </>
         )}
-        <span className="font-semibold">{token ? token.symbol : "Select"}</span>
+        {!token && <span className="text-slate-400">Select</span>}
         <span className="text-slate-400">▾</span>
       </button>
 
@@ -97,7 +104,7 @@ export default function TokenSelector({ selected, onChange, exclude }: Props) {
                   }}
                   className="flex items-center gap-3 px-4 py-2 w-full text-left text-white hover:bg-indigo-600/30"
                 >
-                  <img src={t.logo} alt={t.symbol} className="w-5 h-5 rounded-full" />
+                  <img src={t.logoURI} alt={t.symbol} className="w-5 h-5 rounded-full" />
                   <span className="font-medium">{t.symbol}</span>
                 </button>
               ))}
