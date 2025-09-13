@@ -1,4 +1,4 @@
-// main.tsx (обновлённый)
+// main.tsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
@@ -19,6 +19,7 @@ import {
 } from "@solana/wallet-adapter-wallets";
 
 import "@solana/wallet-adapter-react-ui/styles.css";
+import { Toaster } from "react-hot-toast";   // 👈 импортируем Toaster
 
 const endpoint = "https://api.devnet.solana.com";
 
@@ -39,6 +40,20 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="/dashboard" element={<Dashboard />} />
             </Routes>
           </BrowserRouter>
+
+          {/* 👇 Toaster рендерим глобально, теперь работает везде */}
+          <Toaster
+  position="top-center"   // 👈 ставим посередине сверху
+  toastOptions={{
+    duration: 4000,
+    style: {
+      fontSize: "18px",    // 👈 увеличиваем шрифт
+      padding: "16px 24px", // 👈 увеличиваем внутренние отступы
+      borderRadius: "12px",
+    },
+  }}
+/>
+
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
