@@ -143,11 +143,9 @@ function Dashboard() {
   const priceUi = routeBest
     ? (Number(routeBest.outAmount) / 10 ** outDec) / (amountInAtoms / 10 ** inDec)
     : null;
-  const routeLabel = routeBest?.marketInfos
-    ? routeBest.marketInfos
-        .map(
-          (m: any) => m.label || m.amm?.label || m.swapInfo?.label
-        )
+  const routeLabel = routeBest?.routePlan
+    ? routeBest.routePlan
+        .map((p: any) => p.swapInfo?.label || p.swapInfo?.ammKey || p.label)
         .filter(Boolean)
         .join(" → ")
     : null;
